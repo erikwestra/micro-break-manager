@@ -25,7 +25,7 @@
 | **C2** ✅ | Implement data models + tab-delimited parsing & serialization |
 | **C3** ✅ | `FileStorageService` (read/write lists & logs, 30-day purge) |
 | **C4** ✅ | `RoundRobinManager` with unit tests (list & item progression) |
-| **C5** | AppState (Riverpod providers) wiring models ↔ storage ↔ round-robin |
+| **C5** ✅ | AppState (Riverpod providers) wiring models ↔ storage ↔ round-robin |
 | **C6** | Minimal MainWindow: idle screen, keyboard shortcuts, state hookup |
 | **C7** | `LoggingService`: create daily log file, append entries, unit tests |
 | **C8** | `SetupListsDialog` (sidebar CRUD, editable textarea, save/cancel) |
