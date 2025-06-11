@@ -28,9 +28,9 @@
 | **C5** ✅ | AppState (Riverpod providers) wiring models ↔ storage ↔ round-robin |
 | **C6** ✅ | Minimal MainWindow: idle screen, keyboard shortcuts, state hookup |
 | **C7** ✅ | `LoggingService`: create daily log file, append entries, unit tests |
-| **C8** | `SetupListsDialog` (sidebar CRUD, editable textarea, save/cancel) |
-| **C9** | `ViewLogsDialog` (sidebar dates, read-only viewer) |
-| **C10** | macOS menu bar integration + routing to dialogs |
+| **C8** ✅ | `SetupListsDialog` (sidebar CRUD, editable textarea, save/cancel) |
+| **C9** ✅ | `ViewLogsDialog` (sidebar dates, read-only viewer) |
+| **C10** ✅ | macOS menu bar integration + routing to dialogs |
 | **C11** | Refinement pass: error banners, edge-case tests, CI badge |
 | **C12** | Packaging: icons, entitlements, notarization script |
 

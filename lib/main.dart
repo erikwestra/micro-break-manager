@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
 import 'providers/app_providers.dart';
+import 'services/file_storage_service.dart';
 import 'widgets/app_menu.dart';
 
 void main() async {
@@ -13,6 +14,14 @@ void main() async {
   
   // Initialize window manager
   await windowManager.ensureInitialized();
+  
+  // Purge old logs on startup
+  try {
+    final storage = FileStorageService();
+    await storage.purgeOldLogs();
+  } catch (e) {
+    print('Error purging old logs: $e');
+  }
   
   const windowOptions = WindowOptions(
     size: Size(600, 400),
