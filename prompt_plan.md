@@ -21,7 +21,7 @@
 
 | Chunk | Goal |
 |-------|------|
-| **C1** | Scaffold Flutter macOS project, add core deps, CI workflow |
+| **C1** ✅ | Scaffold Flutter macOS project, add core deps, CI workflow |
 | **C2** | Implement data models + tab-delimited parsing & serialization |
 | **C3** | `FileStorageService` (read/write lists & logs, 30-day purge) |
 | **C4** | `RoundRobinManager` with unit tests (list & item progression) |
