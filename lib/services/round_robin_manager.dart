@@ -41,12 +41,14 @@ class RoundRobinManager {
       final currentList = lists[_currentListIndex];
       final currentItem = currentList.currentItem;
       
+      
       if (currentItem != null) {
         // Found a valid item
         final selection = RoundRobinSelection(
           list: currentList,
           item: currentItem,
         );
+        
         
         // Advance the item index in the current list
         currentList.moveToNext();

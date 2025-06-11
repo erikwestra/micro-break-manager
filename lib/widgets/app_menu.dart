@@ -125,7 +125,6 @@ class AppMenuBar extends ConsumerWidget {
               members: [
                 PlatformMenuItem(
                   label: breakState.isActive ? 'Stop Micro-Break' : 'Start Micro-Break',
-                  shortcut: const SingleActivator(LogicalKeyboardKey.space),
                   onSelected: breakState.isActive 
                     ? () => breakNotifier.finishBreak()
                     : () => breakNotifier.startBreak(),

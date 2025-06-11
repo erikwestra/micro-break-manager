@@ -166,6 +166,7 @@ class _MainWindowState extends ConsumerState<MainWindow> {
     final breakState = ref.watch(breakStateProvider);
     final listsAsync = ref.watch(microBreakListsProvider);
     
+    
     return Scaffold(
       body: KeyboardListener(
         focusNode: FocusNode()..requestFocus(),
