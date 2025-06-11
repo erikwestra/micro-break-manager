@@ -161,26 +161,26 @@ final selectedDateLogEntriesProvider = FutureProvider<List<LogEntry>>((ref) asyn
 });
 
 // Method to refresh lists after changes
-void refreshLists(Ref ref) {
+void refreshLists(WidgetRef ref) {
   ref.invalidate(microBreakListsProvider);
 }
 
 // Method to save a list
-Future<void> saveList(Ref ref, MicroBreakList list) async {
+Future<void> saveList(WidgetRef ref, MicroBreakList list) async {
   final storage = ref.read(storageServiceProvider);
   await storage.saveList(list);
   refreshLists(ref);
 }
 
 // Method to delete a list
-Future<void> deleteList(Ref ref, String listName) async {
+Future<void> deleteList(WidgetRef ref, String listName) async {
   final storage = ref.read(storageServiceProvider);
   await storage.deleteList(listName);
   refreshLists(ref);
 }
 
 // Method to rename a list
-Future<void> renameList(Ref ref, String oldName, String newName) async {
+Future<void> renameList(WidgetRef ref, String oldName, String newName) async {
   final storage = ref.read(storageServiceProvider);
   await storage.renameList(oldName, newName);
   refreshLists(ref);
