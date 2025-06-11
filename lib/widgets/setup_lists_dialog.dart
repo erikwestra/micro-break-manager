@@ -19,7 +19,7 @@ class _SetupListsDialogState extends ConsumerState<SetupListsDialog> {
   final TextEditingController _textController = TextEditingController();
   final TextEditingController _newListController = TextEditingController();
   final TextEditingController _renameController = TextEditingController();
-  bool _hasUnsavedChanges = false;
+  final FocusNode _textFieldFocusNode = FocusNode();
   String? _editingList;
 
   @override
@@ -27,15 +27,24 @@ class _SetupListsDialogState extends ConsumerState<SetupListsDialog> {
     _textController.dispose();
     _newListController.dispose();
     _renameController.dispose();
+    _textFieldFocusNode.dispose();
     super.dispose();
   }
 
-  void _selectList(String listName, List<MicroBreakList> lists) {
-    if (_hasUnsavedChanges) {
-      _showUnsavedChangesDialog(() => _doSelectList(listName, lists));
-      return;
-    }
+  void _selectList(String listName, List<MicroBreakList> lists) async {
+    // Save current list before switching
+    await _saveCurrentListIfNeeded();
     _doSelectList(listName, lists);
+  }
+
+  void _deselectList() async {
+    // Save current list before deselecting
+    await _saveCurrentListIfNeeded();
+    setState(() {
+      selectedListName = null;
+      _editingList = null;
+      _textController.clear();
+    });
   }
 
   void _doSelectList(String listName, List<MicroBreakList> lists) {
@@ -44,17 +53,22 @@ class _SetupListsDialogState extends ConsumerState<SetupListsDialog> {
       selectedListName = listName;
       _editingList = listName;
       _textController.text = list.items.map((item) => item.text).join('\n');
-      _hasUnsavedChanges = false;
+    });
+    
+    // Auto-focus the text field and move cursor to start
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _textFieldFocusNode.requestFocus();
+      _textController.selection = TextSelection.fromPosition(
+        const TextPosition(offset: 0),
+      );
     });
   }
 
   void _onTextChanged() {
-    setState(() {
-      _hasUnsavedChanges = true;
-    });
+    // Just track that content has changed, don't save yet
   }
 
-  Future<void> _saveCurrentList() async {
+  Future<void> _saveCurrentListIfNeeded() async {
     if (_editingList == null) return;
 
     final lines = _textController.text
@@ -67,89 +81,17 @@ class _SetupListsDialogState extends ConsumerState<SetupListsDialog> {
     final list = MicroBreakList(name: _editingList!, items: items);
 
     await saveList(ref, list);
-
-    setState(() {
-      _hasUnsavedChanges = false;
-    });
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Saved list "$_editingList"')),
-      );
-    }
   }
 
-  void _cancelChanges() {
-    if (!_hasUnsavedChanges) return;
-
-    showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Discard Changes?'),
-        content: const Text('You have unsaved changes. Are you sure you want to discard them?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep Editing'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Discard'),
-          ),
-        ],
-      ),
-    ).then((discard) {
-      if (discard == true) {
-        final listsAsync = ref.read(microBreakListsProvider);
-        listsAsync.whenData((lists) {
-          if (selectedListName != null) {
-            _doSelectList(selectedListName!, lists);
-          } else {
-            setState(() {
-              _textController.clear();
-              _hasUnsavedChanges = false;
-              _editingList = null;
-            });
-          }
-        });
-      }
-    });
-  }
-
-  void _showUnsavedChangesDialog(VoidCallback onProceed) {
-    showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Unsaved Changes'),
-        content: const Text('You have unsaved changes. What would you like to do?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(true);
-              setState(() {
-                _hasUnsavedChanges = false;
-              });
-              onProceed();
-            },
-            child: const Text('Discard Changes'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(true);
-              _saveCurrentList().then((_) => onProceed());
-            },
-            child: const Text('Save & Continue'),
-          ),
-        ],
-      ),
-    );
-  }
 
   Future<void> _addNewList() async {
+    // Save current list before creating new one
+    await _saveCurrentListIfNeeded();
+    
+    await _doAddNewList();
+  }
+
+  Future<void> _doAddNewList() async {
     final name = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
@@ -185,24 +127,26 @@ class _SetupListsDialogState extends ConsumerState<SetupListsDialog> {
           // Check for duplicate names
           if (lists.any((list) => list.name == name)) {
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('A list named "$name" already exists')),
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Duplicate Name'),
+                  content: Text('A list named "$name" already exists. Please choose a different name.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('OK'),
+                    ),
+                  ],
+                ),
               );
             }
             return;
           }
 
-          // Create empty list
+          // Create empty list and save it immediately
           final newList = MicroBreakList(name: name, items: const []);
           await saveList(ref, newList);
-
-          // Select the new list
-          setState(() {
-            selectedListName = name;
-            _editingList = name;
-            _textController.clear();
-            _hasUnsavedChanges = false;
-          });
         },
         loading: () {},
         error: (_, __) {},
@@ -245,8 +189,18 @@ class _SetupListsDialogState extends ConsumerState<SetupListsDialog> {
           // Check for duplicate names
           if (lists.any((list) => list.name == newName)) {
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('A list named "$newName" already exists')),
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Duplicate Name'),
+                  content: Text('A list named "$newName" already exists. Please choose a different name.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('OK'),
+                    ),
+                  ],
+                ),
               );
             }
             return;
@@ -295,7 +249,6 @@ class _SetupListsDialogState extends ConsumerState<SetupListsDialog> {
           selectedListName = null;
           _editingList = null;
           _textController.clear();
-          _hasUnsavedChanges = false;
         }
       });
     }
@@ -305,8 +258,16 @@ class _SetupListsDialogState extends ConsumerState<SetupListsDialog> {
   Widget build(BuildContext context) {
     final listsAsync = ref.watch(microBreakListsProvider);
 
-    return Dialog(
-      child: SizedBox(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (!didPop) {
+          await _saveCurrentListIfNeeded();
+          if (mounted) Navigator.of(context).pop();
+        }
+      },
+      child: Dialog(
+        child: SizedBox(
         width: 1000,
         height: 700,
         child: Column(
@@ -327,7 +288,10 @@ class _SetupListsDialogState extends ConsumerState<SetupListsDialog> {
                   ),
                   const Spacer(),
                   IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () async {
+                      await _saveCurrentListIfNeeded();
+                      if (mounted) Navigator.of(context).pop();
+                    },
                     icon: const Icon(Icons.close),
                   ),
                 ],
@@ -340,27 +304,33 @@ class _SetupListsDialogState extends ConsumerState<SetupListsDialog> {
                   // Sidebar
                   SizedBox(
                     width: 300,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(28),
+                    child: GestureDetector(
+                      onTap: _deselectList,
+                      behavior: HitTestBehavior.translucent,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(28),
+                          ),
+                          border: Border(
+                            right: BorderSide(color: Colors.grey[300]!),
+                          ),
                         ),
-                        border: Border(
-                          right: BorderSide(color: Colors.grey[300]!),
-                        ),
-                      ),
-                      child: Column(
+                        child: Column(
                         children: [
                           // Add list button
-                          Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                onPressed: _addNewList,
-                                icon: const Icon(Icons.add),
-                                label: const Text('Add List'),
+                          GestureDetector(
+                            onTap: () {}, // Prevent parent GestureDetector from triggering
+                            child: Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  onPressed: _addNewList,
+                                  icon: const Icon(Icons.add),
+                                  label: const Text('Add List'),
+                                ),
                               ),
                             ),
                           ),
@@ -386,12 +356,31 @@ class _SetupListsDialogState extends ConsumerState<SetupListsDialog> {
                                     final list = sortedLists[index];
                                     final isSelected = selectedListName == list.name;
 
-                                    return ListTile(
-                                      title: Text(list.name),
-                                      subtitle: Text('${list.items.length} items'),
-                                      selected: isSelected,
-                                      onTap: () => _selectList(list.name, lists),
-                                      trailing: PopupMenuButton<String>(
+                                    return GestureDetector(
+                                      onTap: () {}, // Prevent parent GestureDetector from triggering
+                                      child: Container(
+                                        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: isSelected ? Colors.blue.withOpacity(0.1) : null,
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: isSelected ? Border.all(color: Colors.blue.withOpacity(0.3)) : null,
+                                        ),
+                                        child: ListTile(
+                                        title: Text(
+                                          list.name,
+                                          style: TextStyle(
+                                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                            color: isSelected ? Colors.blue.shade700 : null,
+                                          ),
+                                        ),
+                                        subtitle: Text(
+                                          '${list.items.length} items',
+                                          style: TextStyle(
+                                            color: isSelected ? Colors.blue.shade600 : Colors.grey.shade600,
+                                          ),
+                                        ),
+                                        onTap: () => _selectList(list.name, lists),
+                                        trailing: PopupMenuButton<String>(
                                         itemBuilder: (context) => [
                                           const PopupMenuItem(
                                             value: 'rename',
@@ -412,6 +401,8 @@ class _SetupListsDialogState extends ConsumerState<SetupListsDialog> {
                                               break;
                                           }
                                         },
+                                        ),
+                                        ),
                                       ),
                                     );
                                   },
@@ -424,6 +415,7 @@ class _SetupListsDialogState extends ConsumerState<SetupListsDialog> {
                             ),
                           ),
                         ],
+                        ),
                       ),
                     ),
                   ),
@@ -436,77 +428,38 @@ class _SetupListsDialogState extends ConsumerState<SetupListsDialog> {
                               style: TextStyle(color: Colors.grey, fontSize: 16),
                             ),
                           )
-                        : Column(
-                            children: [
-                              // Toolbar
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  border: Border(
-                                    bottom: BorderSide(color: Colors.grey[300]!),
+                        : Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Enter one micro-break item per line:',
+                                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                                ),
+                                const SizedBox(height: 8),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _textController,
+                                    focusNode: _textFieldFocusNode,
+                                    onChanged: (_) => _onTextChanged(),
+                                    maxLines: null,
+                                    expands: true,
+                                    textAlignVertical: TextAlignVertical.top,
+                                    decoration: const InputDecoration(
+                                      border: OutlineInputBorder(),
+                                    ),
                                   ),
                                 ),
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      'Editing: $selectedListName',
-                                      style: const TextStyle(fontWeight: FontWeight.bold),
-                                    ),
-                                    const Spacer(),
-                                    if (_hasUnsavedChanges)
-                                      const Icon(
-                                        Icons.circle,
-                                        size: 8,
-                                        color: Colors.orange,
-                                      ),
-                                    const SizedBox(width: 8),
-                                    TextButton(
-                                      onPressed: _hasUnsavedChanges ? _cancelChanges : null,
-                                      child: const Text('Cancel'),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    ElevatedButton(
-                                      onPressed: _hasUnsavedChanges ? _saveCurrentList : null,
-                                      child: const Text('Save'),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              // Text editor
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Enter one micro-break item per line:',
-                                        style: TextStyle(fontSize: 14, color: Colors.grey),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Expanded(
-                                        child: TextField(
-                                          controller: _textController,
-                                          onChanged: (_) => _onTextChanged(),
-                                          maxLines: null,
-                                          expands: true,
-                                          decoration: const InputDecoration(
-                                            border: OutlineInputBorder(),
-                                            hintText: 'Cat-Camel stretch\nStanding Back Extension\nSeated Pelvic Tilt',
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                   ),
                 ],
               ),
             ),
           ],
+        ),
         ),
       ),
     );

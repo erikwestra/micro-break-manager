@@ -55,9 +55,8 @@ class FileStorageService {
           final fileName = path.basenameWithoutExtension(entity.path);
           final lines = await entity.readAsLines();
           
-          if (lines.isNotEmpty) {
-            lists.add(MicroBreakList.fromTsvLines(fileName, lines));
-          }
+          // Create list even if empty
+          lists.add(MicroBreakList.fromTsvLines(fileName, lines));
         } catch (e) {
           // Skip malformed files
           print('Error reading list file ${entity.path}: $e');

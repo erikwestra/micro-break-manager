@@ -85,6 +85,13 @@ class _MyAppState extends State<MyApp> with WindowListener {
 - **Window Manager Setup**: Initialized in `main()` with `setPreventClose(true)`
 - **Menu Integration**: "Hide Task Manager" (⌘H) uses `windowManager.hide()`, "Quit" (⌘Q) uses `windowManager.close()`
 
+## UI Guidelines
+
+### Snackbars in Modal Dialogs
+- **NEVER use snackbars in modal dialogs** - they are either hidden behind the modal or barely visible
+- Use AlertDialog for error messages and confirmations instead
+- Silent operations with button state changes are preferred for simple feedback (save/cancel states)
+
 ## Flutter API References
 
 - ALWAYS use the API reference in `/Users/erik/Development/api-reference/flutter-api` for all Flutter development
