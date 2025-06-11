@@ -39,11 +39,14 @@ class AppMenuBar extends ConsumerWidget {
     });
   }
 
-  void _showLogsDialog(BuildContext context) {
+  void _showLogsDialog(BuildContext context) async {
+    await prepareWindowForLargeDialog();
     showDialog(
       context: context,
       builder: (context) => const ViewLogsDialog(),
-    );
+    ).then((_) {
+      restoreWindowSize();
+    });
   }
 
   void _showListsInFinder(WidgetRef ref) async {

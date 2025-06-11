@@ -106,8 +106,8 @@ class ViewLogsDialog extends ConsumerWidget {
 
     return Dialog(
       child: SizedBox(
-        width: 800,
-        height: 600,
+        width: 1000,
+        height: 700,
         child: Column(
           children: [
             // Header
@@ -142,14 +142,23 @@ class ViewLogsDialog extends ConsumerWidget {
                 children: [
                   // Sidebar - Available dates
                   SizedBox(
-                    width: 250,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        border: Border(
-                          right: BorderSide(color: Colors.grey[300]!),
+                    width: 300,
+                    child: GestureDetector(
+                      onTap: () {
+                        // Clear selection when clicking on empty sidebar area
+                        ref.read(selectedLogDateProvider.notifier).state = null;
+                      },
+                      behavior: HitTestBehavior.translucent,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(28),
+                          ),
+                          border: Border(
+                            right: BorderSide(color: Colors.grey[300]!),
+                          ),
                         ),
-                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -192,13 +201,34 @@ class ViewLogsDialog extends ConsumerWidget {
                                         DateTime.now().month == date.month &&
                                         DateTime.now().day == date.day;
 
-                                    return ListTile(
-                                      title: Text(_formatDate(date)),
-                                      subtitle: isToday ? const Text('Today') : null,
-                                      selected: isSelected,
-                                      onTap: () {
-                                        ref.read(selectedLogDateProvider.notifier).state = date;
-                                      },
+                                    return GestureDetector(
+                                      onTap: () {}, // Prevent parent GestureDetector from triggering
+                                      child: Container(
+                                        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: isSelected ? Colors.blue.withOpacity(0.1) : null,
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: isSelected ? Border.all(color: Colors.blue.withOpacity(0.3)) : null,
+                                        ),
+                                        child: ListTile(
+                                          title: Text(
+                                            _formatDate(date),
+                                            style: TextStyle(
+                                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                              color: isSelected ? Colors.blue.shade700 : null,
+                                            ),
+                                          ),
+                                          subtitle: isToday ? Text(
+                                            'Today',
+                                            style: TextStyle(
+                                              color: isSelected ? Colors.blue.shade600 : Colors.grey.shade600,
+                                            ),
+                                          ) : null,
+                                          onTap: () {
+                                            ref.read(selectedLogDateProvider.notifier).state = date;
+                                          },
+                                        ),
+                                      ),
                                     );
                                   },
                                 );
@@ -210,6 +240,7 @@ class ViewLogsDialog extends ConsumerWidget {
                             ),
                           ),
                         ],
+                        ),
                       ),
                     ),
                   ),
@@ -249,9 +280,31 @@ class ViewLogsDialog extends ConsumerWidget {
                                           Duration.zero,
                                           (sum, entry) => sum + entry.duration,
                                         );
-                                        return Text(
-                                          '${entries.length} sessions • ${_formatDuration(totalDuration)} total',
-                                          style: const TextStyle(color: Colors.grey),
+                                        
+                                        // Calculate totals per list
+                                        final Map<String, Duration> listTotals = {};
+                                        for (final entry in entries) {
+                                          listTotals[entry.listName] = 
+                                            (listTotals[entry.listName] ?? Duration.zero) + entry.duration;
+                                        }
+                                        
+                                        return Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              '${entries.length} sessions • ${_formatDuration(totalDuration)} total',
+                                              style: const TextStyle(color: Colors.grey),
+                                            ),
+                                            if (listTotals.isNotEmpty) ...[
+                                              const SizedBox(height: 8),
+                                              ...listTotals.entries.map((listEntry) => 
+                                                Text(
+                                                  '${listEntry.key}: ${_formatDuration(listEntry.value)}',
+                                                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                                ),
+                                              ),
+                                            ],
+                                          ],
                                         );
                                       },
                                       loading: () => const Text(
