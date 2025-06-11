@@ -34,11 +34,10 @@ Future<void> prepareWindowForLargeDialog() async {
 }
 
 Future<void> restoreWindowSize() async {
-  if (_originalWindowSize != null) {
-    await windowManager.setSize(_originalWindowSize!);
-    await windowManager.center();
-    _originalWindowSize = null;
-  }
+  // Always restore to the fixed 400x100 size
+  await windowManager.setSize(const Size(400, 100));
+  await windowManager.center();
+  _originalWindowSize = null;
 }
 
 void main() async {
@@ -56,10 +55,13 @@ void main() async {
   }
   
   const windowOptions = WindowOptions(
-    minimumSize: Size(400, 300),
+    size: Size(400, 100),
+    minimumSize: Size(400, 100),
+    maximumSize: Size(400, 100),
     backgroundColor: Colors.transparent,
     skipTaskbar: false,
-    titleBarStyle: TitleBarStyle.normal,
+    titleBarStyle: TitleBarStyle.hidden,
+    windowButtonVisibility: false,
     title: 'Micro-Break Manager',
   );
   
@@ -142,25 +144,6 @@ class MainWindow extends ConsumerStatefulWidget {
 
 class _MainWindowState extends ConsumerState<MainWindow> {
 
-  void _handleKeyEvent(KeyEvent event) {
-    if (event is KeyDownEvent) {
-      final breakNotifier = ref.read(breakStateProvider.notifier);
-      final breakState = ref.read(breakStateProvider);
-      
-      if (event.logicalKey == LogicalKeyboardKey.space) {
-        if (breakState.isActive) {
-          breakNotifier.finishBreak();
-        } else {
-          breakNotifier.startBreak();
-        }
-      } else if (event.logicalKey == LogicalKeyboardKey.escape) {
-        if (breakState.isActive) {
-          breakNotifier.cancelBreak();
-        }
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final breakState = ref.watch(breakStateProvider);
@@ -168,13 +151,16 @@ class _MainWindowState extends ConsumerState<MainWindow> {
     
     
     return Scaffold(
-      body: KeyboardListener(
-        focusNode: FocusNode()..requestFocus(),
-        onKeyEvent: _handleKeyEvent,
+      backgroundColor: const Color(0xFFE3F2FD), // Pale blue
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onPanStart: (details) {
+          windowManager.startDragging();
+        },
         child: Container(
           width: double.infinity,
           height: double.infinity,
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
           child: Center(
             child: listsAsync.when(
               data: (lists) {
@@ -207,26 +193,19 @@ class NoListsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Icon(
           Icons.list_alt,
-          size: 64,
-          color: Colors.grey[400],
+          size: 24,
+          color: Colors.grey[600],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(width: 12),
         Text(
-          'No micro-break lists found',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          'No lists - use Setup menu',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: Colors.grey[600],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Go to Setup Micro-Breaks to create your first list',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[500],
           ),
         ),
       ],
@@ -239,28 +218,11 @@ class IdleView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.play_arrow_rounded,
-          size: 64,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Ready for your next micro-break',
-          style: Theme.of(context).textTheme.headlineSmall,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Press Space to start',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: Colors.grey[600],
-          ),
-        ),
-      ],
+    return Text(
+      'Micro-Break',
+      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+        fontWeight: FontWeight.bold,
+      ),
     );
   }
 }
@@ -279,31 +241,10 @@ class ActiveBreakView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            listName,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
-            ),
-          ),
-        ),
-        const SizedBox(height: 24),
-        Text(
-          itemText,
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.w500,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 32),
+        // Timer
         StreamBuilder(
           stream: Stream.periodic(const Duration(seconds: 1)),
           builder: (context, snapshot) {
@@ -313,42 +254,24 @@ class ActiveBreakView extends StatelessWidget {
             
             return Text(
               '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontFamily: 'monospace',
                 color: Theme.of(context).colorScheme.primary,
               ),
             );
           },
         ),
-        const SizedBox(height: 32),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Space',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+        const SizedBox(width: 24),
+        // Description
+        Expanded(
+          child: Text(
+            itemText,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w600,
             ),
-            Text(
-              ' to finish • ',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
-            ),
-            Text(
-              'Escape',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              ' to cancel',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
-            ),
-          ],
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ],
     );
@@ -362,28 +285,24 @@ class ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Icon(
           Icons.error_outline,
-          size: 64,
+          size: 24,
           color: Theme.of(context).colorScheme.error,
         ),
-        const SizedBox(height: 16),
-        Text(
-          'Error loading data',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            color: Theme.of(context).colorScheme.error,
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            'Error: $error',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.error,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          error,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
-          ),
-          textAlign: TextAlign.center,
         ),
       ],
     );

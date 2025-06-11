@@ -23,46 +23,29 @@ final microBreakListsProvider = FutureProvider<List<MicroBreakList>>((ref) async
 });
 
 // Round-robin manager provider
-final roundRobinManagerProvider = StateNotifierProvider<RoundRobinManagerNotifier, RoundRobinManager?>((ref) {
-  return RoundRobinManagerNotifier(ref);
-});
-
-class RoundRobinManagerNotifier extends StateNotifier<RoundRobinManager?> {
-  final Ref ref;
+final roundRobinManagerProvider = FutureProvider<RoundRobinManager?>((ref) async {
+  final listsAsync = ref.watch(microBreakListsProvider);
   
-  RoundRobinManagerNotifier(this.ref) : super(null) {
-    _initializeManager();
-  }
-
-  void _initializeManager() {
-    final listsAsync = ref.read(microBreakListsProvider);
-    
-    listsAsync.when(
-      data: (lists) {
-        if (lists.isEmpty) {
-          state = null;
-          return;
-        }
-        
-        final manager = RoundRobinManager(lists: lists);
-        
-        // Restore saved indices if available
-        final savedIndices = ref.read(savedIndicesProvider);
-        if (savedIndices.isNotEmpty) {
-          manager.restoreIndicesState(savedIndices);
-        }
-        
-        state = manager;
-      },
-      loading: () => state = null,
-      error: (_, __) => state = null,
-    );
-  }
-
-  void refreshManager() {
-    _initializeManager();
-  }
-}
+  return listsAsync.when(
+    data: (lists) {
+      if (lists.isEmpty) {
+        return null;
+      }
+      
+      final manager = RoundRobinManager(lists: lists);
+      
+      // Restore saved indices if available
+      final savedIndices = ref.read(savedIndicesProvider);
+      if (savedIndices.isNotEmpty) {
+        manager.restoreIndicesState(savedIndices);
+      }
+      
+      return manager;
+    },
+    loading: () => null,
+    error: (_, __) => null,
+  );
+});
 
 // Saved indices state (persisted locally)
 final savedIndicesProvider = StateNotifierProvider<SavedIndicesNotifier, Map<String, int>>((ref) {
@@ -176,17 +159,23 @@ class BreakStateNotifier extends StateNotifier<BreakState> {
   BreakStateNotifier(this.ref) : super(const BreakState());
   
   void startBreak() {
-    final manager = ref.read(roundRobinManagerProvider);
-    if (manager == null) return;
-    
-    final selection = manager.nextItem();
-    if (selection == null) return;
-    
-    state = BreakState(
-      isActive: true,
-      startTime: DateTime.now(),
-      currentList: selection.list,
-      currentItem: selection.item,
+    final managerAsync = ref.read(roundRobinManagerProvider);
+    managerAsync.when(
+      data: (manager) {
+        if (manager == null) return;
+        
+        final selection = manager.nextItem();
+        if (selection == null) return;
+        
+        state = BreakState(
+          isActive: true,
+          startTime: DateTime.now(),
+          currentList: selection.list,
+          currentItem: selection.item,
+        );
+      },
+      loading: () {},
+      error: (_, __) {},
     );
   }
   
@@ -209,10 +198,12 @@ class BreakStateNotifier extends StateNotifier<BreakState> {
     await storage.appendLogEntry(entry);
     
     // Save indices state
-    final manager = ref.read(roundRobinManagerProvider);
-    if (manager != null) {
-      await ref.read(savedIndicesProvider.notifier).updateState(manager.getIndicesState());
-    }
+    final managerAsync = ref.read(roundRobinManagerProvider);
+    managerAsync.whenData((manager) async {
+      if (manager != null) {
+        await ref.read(savedIndicesProvider.notifier).updateState(manager.getIndicesState());
+      }
+    });
     
     // Reset state
     state = const BreakState();
@@ -222,8 +213,10 @@ class BreakStateNotifier extends StateNotifier<BreakState> {
     if (!state.isActive) return;
     
     // Roll back the selection
-    final manager = ref.read(roundRobinManagerProvider);
-    manager?.cancelSelection();
+    final managerAsync = ref.read(roundRobinManagerProvider);
+    managerAsync.whenData((manager) {
+      manager?.cancelSelection();
+    });
     
     // Reset state
     state = const BreakState();
@@ -257,25 +250,23 @@ void refreshLists(WidgetRef ref) {
 Future<void> saveList(WidgetRef ref, MicroBreakList list) async {
   final storage = ref.read(storageServiceProvider);
   await storage.saveList(list);
-  refreshLists(ref);
-  // Refresh the round-robin manager with updated lists
-  ref.read(roundRobinManagerProvider.notifier).refreshManager();
+  // Invalidate providers to refresh with new data
+  ref.invalidate(microBreakListsProvider);
+  ref.invalidate(roundRobinManagerProvider);
 }
 
 // Method to delete a list
 Future<void> deleteList(WidgetRef ref, String listName) async {
   final storage = ref.read(storageServiceProvider);
   await storage.deleteList(listName);
-  refreshLists(ref);
-  // Refresh the round-robin manager with updated lists
-  ref.read(roundRobinManagerProvider.notifier).refreshManager();
+  ref.invalidate(microBreakListsProvider);
+  ref.invalidate(roundRobinManagerProvider);
 }
 
 // Method to rename a list
 Future<void> renameList(WidgetRef ref, String oldName, String newName) async {
   final storage = ref.read(storageServiceProvider);
   await storage.renameList(oldName, newName);
-  refreshLists(ref);
-  // Refresh the round-robin manager with updated lists
-  ref.read(roundRobinManagerProvider.notifier).refreshManager();
+  ref.invalidate(microBreakListsProvider);
+  ref.invalidate(roundRobinManagerProvider);
 }

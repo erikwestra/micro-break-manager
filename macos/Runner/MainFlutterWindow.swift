@@ -15,7 +15,23 @@ class MainFlutterWindow: NSWindow {
     
     // Set up window state saving
     setupWindowStateSaving()
-
+    
+    // Set corner radius to 50 pixels
+    self.backgroundColor = NSColor.clear
+    self.isOpaque = false
+    self.hasShadow = true
+    
+    // Remove any window chrome/borders
+    self.isMovableByWindowBackground = true
+    self.titlebarAppearsTransparent = true
+    
+    if let contentView = self.contentView {
+      contentView.wantsLayer = true
+      contentView.layer?.cornerRadius = 50
+      contentView.layer?.masksToBounds = true
+      contentView.layer?.backgroundColor = NSColor.clear.cgColor
+    }
+    
     super.awakeFromNib()
   }
   
