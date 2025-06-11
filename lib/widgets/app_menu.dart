@@ -27,11 +27,14 @@ class AppMenuBar extends StatelessWidget {
     );
   }
 
-  void _showSetupDialog(BuildContext context) {
+  void _showSetupDialog(BuildContext context) async {
+    await prepareWindowForLargeDialog();
     showDialog(
       context: context,
       builder: (context) => const SetupListsDialog(),
-    );
+    ).then((_) {
+      restoreWindowSize();
+    });
   }
 
   void _showLogsDialog(BuildContext context) {

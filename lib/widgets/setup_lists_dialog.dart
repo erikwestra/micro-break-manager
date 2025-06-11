@@ -307,8 +307,8 @@ class _SetupListsDialogState extends ConsumerState<SetupListsDialog> {
 
     return Dialog(
       child: SizedBox(
-        width: 800,
-        height: 600,
+        width: 1000,
+        height: 700,
         child: Column(
           children: [
             // Header
@@ -339,10 +339,13 @@ class _SetupListsDialogState extends ConsumerState<SetupListsDialog> {
                 children: [
                   // Sidebar
                   SizedBox(
-                    width: 250,
+                    width: 300,
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.grey[50],
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(28),
+                        ),
                         border: Border(
                           right: BorderSide(color: Colors.grey[300]!),
                         ),

@@ -17,6 +17,30 @@ void quitApp() async {
   await windowManager.destroy();
 }
 
+// Window resize utilities for dialogs
+Size? _originalWindowSize;
+
+Future<void> prepareWindowForLargeDialog() async {
+  _originalWindowSize = await windowManager.getSize();
+  const dialogSize = Size(1200, 800);
+  final currentSize = await windowManager.getSize();
+  
+  if (currentSize.width < dialogSize.width || currentSize.height < dialogSize.height) {
+    final newWidth = currentSize.width < dialogSize.width ? dialogSize.width : currentSize.width;
+    final newHeight = currentSize.height < dialogSize.height ? dialogSize.height : currentSize.height;
+    await windowManager.setSize(Size(newWidth, newHeight));
+    await windowManager.center();
+  }
+}
+
+Future<void> restoreWindowSize() async {
+  if (_originalWindowSize != null) {
+    await windowManager.setSize(_originalWindowSize!);
+    await windowManager.center();
+    _originalWindowSize = null;
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
