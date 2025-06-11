@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
+import '../main.dart';
 import 'setup_lists_dialog.dart';
 import 'view_logs_dialog.dart';
 
@@ -40,6 +41,10 @@ class AppMenuBar extends StatelessWidget {
     );
   }
 
+  void _quitApp() async {
+    quitApp();
+  }
+
   @override
   Widget build(BuildContext context) {
     return PlatformMenuBar(
@@ -74,7 +79,7 @@ class AppMenuBar extends StatelessWidget {
                     meta: true,
                   ),
                   onSelected: () {
-                    SystemNavigator.pop();
+                    _quitApp();
                   },
                 ),
               ],

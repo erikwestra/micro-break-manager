@@ -31,8 +31,8 @@
 | **C8** ✅ | `SetupListsDialog` (sidebar CRUD, editable textarea, save/cancel) |
 | **C9** ✅ | `ViewLogsDialog` (sidebar dates, read-only viewer) |
 | **C10** ✅ | macOS menu bar integration + routing to dialogs |
-| **C11** | Refinement pass: error banners, edge-case tests, CI badge |
-| **C12** | Packaging: icons, entitlements, notarization script |
+| **C11** ✅ | Refinement pass: error banners, edge-case tests, CI badge |
+| **C12** ✅ | Packaging: icons, entitlements, notarization script |
 
 Each chunk is small enough to finish in a day, yet large enough to yield visible progress.
 

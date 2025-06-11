@@ -9,6 +9,14 @@ import 'providers/app_providers.dart';
 import 'services/file_storage_service.dart';
 import 'widgets/app_menu.dart';
 
+// Global quit flag and function
+bool _isQuitting = false;
+
+void quitApp() async {
+  _isQuitting = true;
+  await windowManager.destroy();
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -46,8 +54,48 @@ void main() async {
   );
 }
 
-class MicroBreakApp extends StatelessWidget {
+class MicroBreakApp extends StatefulWidget {
   const MicroBreakApp({super.key});
+
+  @override
+  State<MicroBreakApp> createState() => _MicroBreakAppState();
+}
+
+class _MicroBreakAppState extends State<MicroBreakApp> with WindowListener {
+
+  @override
+  void initState() {
+    super.initState();
+    windowManager.addListener(this);
+  }
+
+  @override
+  void dispose() {
+    windowManager.removeListener(this);
+    super.dispose();
+  }
+
+  @override
+  void onWindowClose() async {
+    // If we're quitting, allow the close to proceed
+    if (_isQuitting) {
+      return;
+    }
+    
+    // Otherwise, hide the window instead of closing
+    await windowManager.hide();
+  }
+
+  @override
+  void onWindowFocus() async {
+    // When window gains focus, make sure it's visible
+    bool isVisible = await windowManager.isVisible();
+    if (!isVisible) {
+      await windowManager.show();
+      await windowManager.focus();
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -70,42 +118,7 @@ class MainWindow extends ConsumerStatefulWidget {
   ConsumerState<MainWindow> createState() => _MainWindowState();
 }
 
-class _MainWindowState extends ConsumerState<MainWindow> with WindowListener {
-  static bool _isQuitting = false;
-
-  @override
-  void initState() {
-    super.initState();
-    windowManager.addListener(this);
-  }
-
-  @override
-  void dispose() {
-    windowManager.removeListener(this);
-    super.dispose();
-  }
-
-  @override
-  void onWindowClose() async {
-    if (_isQuitting) {
-      return;
-    }
-    await windowManager.hide();
-  }
-
-  @override
-  void onWindowFocus() async {
-    bool isVisible = await windowManager.isVisible();
-    if (!isVisible) {
-      await windowManager.show();
-      await windowManager.focus();
-    }
-  }
-
-  static void quitApp() async {
-    _isQuitting = true;
-    await windowManager.destroy();
-  }
+class _MainWindowState extends ConsumerState<MainWindow> {
 
   void _handleKeyEvent(KeyEvent event) {
     if (event is KeyDownEvent) {
