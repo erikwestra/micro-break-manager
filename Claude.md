@@ -92,6 +92,14 @@ class _MyAppState extends State<MyApp> with WindowListener {
 - Use AlertDialog for error messages and confirmations instead
 - Silent operations with button state changes are preferred for simple feedback (save/cancel states)
 
+## Implementation Guidelines
+
+### When Erik Asks About Possibilities
+- **NEVER implement features when Erik asks "Can Flutter do X?" or "Is it possible to Y?"**
+- Only answer whether it's possible and briefly explain the approach
+- Wait for explicit instruction like "implement this" or "do it" before writing any code
+- Erik will clearly tell you when he wants implementation, not just information
+
 ## Flutter API References
 
 - ALWAYS use the API reference in `/Users/erik/Development/api-reference/flutter-api` for all Flutter development

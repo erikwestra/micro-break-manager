@@ -4,6 +4,7 @@
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:url_launcher/url_launcher.dart';
 import '../models/micro_break_list.dart';
 import '../models/log_entry.dart';
 
@@ -204,5 +205,17 @@ class FileStorageService {
         }
       }
     }
+  }
+
+  Future<void> showListsInFinder() async {
+    final listsDir = await getListsDirectory();
+    final uri = Uri.file(listsDir.path);
+    await launchUrl(uri);
+  }
+
+  Future<void> showLogsInFinder() async {
+    final logsDir = await getLogsDirectory();
+    final uri = Uri.file(logsDir.path);
+    await launchUrl(uri);
   }
 }

@@ -3,12 +3,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
 import '../main.dart';
+import '../providers/app_providers.dart';
 import 'setup_lists_dialog.dart';
 import 'view_logs_dialog.dart';
 
-class AppMenuBar extends StatelessWidget {
+class AppMenuBar extends ConsumerWidget {
   final Widget child;
 
   const AppMenuBar({super.key, required this.child});
@@ -44,12 +46,24 @@ class AppMenuBar extends StatelessWidget {
     );
   }
 
+  void _showListsInFinder(WidgetRef ref) async {
+    final storage = ref.read(storageServiceProvider);
+    await storage.showListsInFinder();
+  }
+
+  void _showLogsInFinder(WidgetRef ref) async {
+    final storage = ref.read(storageServiceProvider);
+    await storage.showLogsInFinder();
+  }
+
   void _quitApp() async {
     quitApp();
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final breakState = ref.watch(breakStateProvider);
+    final breakNotifier = ref.read(breakStateProvider.notifier);
     return PlatformMenuBar(
       menus: [
         PlatformMenu(
@@ -60,6 +74,14 @@ class AppMenuBar extends StatelessWidget {
                 PlatformMenuItem(
                   label: 'About Micro-Break Manager',
                   onSelected: () => _showAboutDialog(context),
+                ),
+                PlatformMenuItem(
+                  label: 'Setup Micro-Breaks...',
+                  shortcut: const SingleActivator(
+                    LogicalKeyboardKey.comma,
+                    meta: true,
+                  ),
+                  onSelected: () => _showSetupDialog(context),
                 ),
               ],
             ),
@@ -75,6 +97,10 @@ class AppMenuBar extends StatelessWidget {
                     await windowManager.hide();
                   },
                 ),
+              ],
+            ),
+            PlatformMenuItemGroup(
+              members: [
                 PlatformMenuItem(
                   label: 'Quit Micro-Break Manager',
                   shortcut: const SingleActivator(
@@ -90,18 +116,31 @@ class AppMenuBar extends StatelessWidget {
           ],
         ),
         PlatformMenu(
-          label: 'Manage',
+          label: 'Breaks',
           menus: [
             PlatformMenuItemGroup(
               members: [
                 PlatformMenuItem(
-                  label: 'Setup Micro-Breaks...',
-                  shortcut: const SingleActivator(
-                    LogicalKeyboardKey.comma,
-                    meta: true,
-                  ),
-                  onSelected: () => _showSetupDialog(context),
+                  label: breakState.isActive ? 'Stop Micro-Break' : 'Start Micro-Break',
+                  shortcut: const SingleActivator(LogicalKeyboardKey.space),
+                  onSelected: breakState.isActive 
+                    ? () => breakNotifier.finishBreak()
+                    : () => breakNotifier.startBreak(),
                 ),
+                PlatformMenuItem(
+                  label: 'Cancel Micro-Break',
+                  shortcut: const SingleActivator(LogicalKeyboardKey.escape),
+                  onSelected: breakState.isActive ? () => breakNotifier.cancelBreak() : null,
+                ),
+              ],
+            ),
+          ],
+        ),
+        PlatformMenu(
+          label: 'Utils',
+          menus: [
+            PlatformMenuItemGroup(
+              members: [
                 PlatformMenuItem(
                   label: 'View Logs...',
                   shortcut: const SingleActivator(
@@ -109,6 +148,18 @@ class AppMenuBar extends StatelessWidget {
                     meta: true,
                   ),
                   onSelected: () => _showLogsDialog(context),
+                ),
+              ],
+            ),
+            PlatformMenuItemGroup(
+              members: [
+                PlatformMenuItem(
+                  label: 'Show Lists in Finder',
+                  onSelected: () => _showListsInFinder(ref),
+                ),
+                PlatformMenuItem(
+                  label: 'Show Logs in Finder',
+                  onSelected: () => _showLogsInFinder(ref),
                 ),
               ],
             ),
