@@ -9,6 +9,7 @@ import '../main.dart';
 import '../providers/app_providers.dart';
 import 'setup_lists_dialog.dart';
 import 'view_logs_dialog.dart';
+import 'settings_dialog.dart';
 
 class AppMenuBar extends ConsumerWidget {
   final Widget child;
@@ -39,20 +40,14 @@ class AppMenuBar extends ConsumerWidget {
     });
   }
 
-  void _showSettingsDialog(BuildContext context) {
+  void _showSettingsDialog(BuildContext context) async {
+    await prepareWindowForLargeDialog();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Settings'),
-        content: const Text('Settings placeholder - content coming soon'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
+      builder: (context) => const SettingsDialog(),
+    ).then((_) {
+      restoreWindowSize();
+    });
   }
 
   void _showLogsDialog(BuildContext context) async {

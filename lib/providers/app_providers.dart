@@ -10,10 +10,12 @@ import '../services/round_robin_manager.dart';
 import '../models/micro_break_list.dart';
 import '../models/micro_break_item.dart';
 import '../models/log_entry.dart';
+import 'settings_provider.dart';
 
 // Storage service provider
 final storageServiceProvider = Provider<FileStorageService>((ref) {
-  return FileStorageService();
+  final settingsNotifier = ref.watch(settingsProvider.notifier);
+  return FileStorageService(settingsNotifier: settingsNotifier);
 });
 
 // Lists provider that loads from storage
@@ -49,17 +51,19 @@ final roundRobinManagerProvider = FutureProvider<RoundRobinManager?>((ref) async
 
 // Saved indices state (persisted locally)
 final savedIndicesProvider = StateNotifierProvider<SavedIndicesNotifier, Map<String, int>>((ref) {
-  return SavedIndicesNotifier();
+  return SavedIndicesNotifier(ref);
 });
 
 class SavedIndicesNotifier extends StateNotifier<Map<String, int>> {
-  SavedIndicesNotifier() : super({}) {
+  final Ref ref;
+  
+  SavedIndicesNotifier(this.ref) : super({}) {
     _loadState();
   }
 
   Future<void> _loadState() async {
     try {
-      final storage = FileStorageService();
+      final storage = ref.read(storageServiceProvider);
       final appDir = await storage.getAppDirectory();
       final stateFile = File(path.join(appDir.path, 'state.json'));
       
@@ -88,7 +92,7 @@ class SavedIndicesNotifier extends StateNotifier<Map<String, int>> {
 
   Future<void> _saveState() async {
     try {
-      final storage = FileStorageService();
+      final storage = ref.read(storageServiceProvider);
       final appDir = await storage.getAppDirectory();
       final stateFile = File(path.join(appDir.path, 'state.json'));
       

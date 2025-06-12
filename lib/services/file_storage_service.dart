@@ -7,13 +7,25 @@ import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
 import '../models/micro_break_list.dart';
 import '../models/log_entry.dart';
+import '../providers/settings_provider.dart';
 
 class FileStorageService {
   static const String appDirName = 'MicroBreakManager';
-  static const String listsDirName = 'lists';
-  static const String logsDirName = 'logs';
+  static const String microBreakDataDirName = 'Micro-Break Data';
+  static const String listsDirName = 'Lists';
+  static const String logsDirName = 'Logs';
+  
+  final SettingsNotifier? settingsNotifier;
+  
+  FileStorageService({this.settingsNotifier});
   
   Future<Directory> getAppDirectory() async {
+    if (settingsNotifier != null) {
+      final dataPath = await settingsNotifier!.getMicroBreakDataDirectory();
+      return Directory(dataPath);
+    }
+    
+    // Fallback to default location
     final directory = await getApplicationSupportDirectory();
     final appDir = Directory(path.join(directory.path, appDirName));
     
