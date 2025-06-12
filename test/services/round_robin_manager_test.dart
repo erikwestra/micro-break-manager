@@ -264,5 +264,123 @@ void main() {
       expect(selection2?.list.name, equals('Tai Chi'));
       expect(selection2?.item.text, equals('Cloud Hands'));
     });
+
+    test('skips blank entries and moves to next list', () {
+      final listA = MicroBreakList(
+        name: 'A',
+        items: const [
+          MicroBreakItem(text: ''),
+          MicroBreakItem(text: ''),
+          MicroBreakItem(text: ''),
+          MicroBreakItem(text: 'A1'),
+        ],
+      );
+      
+      final listB = MicroBreakList(
+        name: 'B',
+        items: const [
+          MicroBreakItem(text: 'B1'),
+          MicroBreakItem(text: 'B2'),
+          MicroBreakItem(text: 'B3'),
+        ],
+      );
+      
+      final manager = RoundRobinManager(lists: [listA, listB]);
+      
+      // Expected: blank from A skips to B1, blank from A skips to B2, 
+      // blank from A skips to B3, A1, B1, blank from A skips to B2...
+      expect(manager.nextItem()?.item.text, equals('B1'));
+      expect(manager.nextItem()?.item.text, equals('B2'));
+      expect(manager.nextItem()?.item.text, equals('B3'));
+      expect(manager.nextItem()?.item.text, equals('A1'));
+      expect(manager.nextItem()?.item.text, equals('B1'));
+      expect(manager.nextItem()?.item.text, equals('B2'));
+    });
+
+    test('handles mixed blank and non-blank items', () {
+      final listA = MicroBreakList(
+        name: 'A',
+        items: const [
+          MicroBreakItem(text: 'A1'),
+          MicroBreakItem(text: ''),
+          MicroBreakItem(text: 'A2'),
+          MicroBreakItem(text: ''),
+        ],
+      );
+      
+      final listB = MicroBreakList(
+        name: 'B',
+        items: const [
+          MicroBreakItem(text: 'B1'),
+          MicroBreakItem(text: 'B2'),
+        ],
+      );
+      
+      final manager = RoundRobinManager(lists: [listA, listB]);
+      
+      // Expected: A1, B1, blank skips to B2, A2, B1, blank skips to B2, A1...
+      expect(manager.nextItem()?.item.text, equals('A1'));
+      expect(manager.nextItem()?.item.text, equals('B1'));
+      expect(manager.nextItem()?.item.text, equals('B2'));
+      expect(manager.nextItem()?.item.text, equals('A2'));
+      expect(manager.nextItem()?.item.text, equals('B1'));
+      expect(manager.nextItem()?.item.text, equals('B2'));
+      expect(manager.nextItem()?.item.text, equals('A1'));
+    });
+
+    test('returns null when all items are blank', () {
+      final listA = MicroBreakList(
+        name: 'A',
+        items: const [
+          MicroBreakItem(text: ''),
+          MicroBreakItem(text: '   '),
+        ],
+      );
+      
+      final listB = MicroBreakList(
+        name: 'B',
+        items: const [
+          MicroBreakItem(text: ''),
+        ],
+      );
+      
+      final manager = RoundRobinManager(lists: [listA, listB]);
+      
+      expect(manager.nextItem(), isNull);
+    });
+
+    test('handles list with only blanks correctly', () {
+      final listA = MicroBreakList(
+        name: 'A',
+        items: const [
+          MicroBreakItem(text: ''),
+          MicroBreakItem(text: ''),
+        ],
+      );
+      
+      final listB = MicroBreakList(
+        name: 'B',
+        items: const [
+          MicroBreakItem(text: 'B1'),
+          MicroBreakItem(text: 'B2'),
+        ],
+      );
+      
+      final listC = MicroBreakList(
+        name: 'C',
+        items: const [
+          MicroBreakItem(text: 'C1'),
+        ],
+      );
+      
+      final manager = RoundRobinManager(lists: [listA, listB, listC]);
+      
+      // A always skips, so we alternate between B and C
+      expect(manager.nextItem()?.item.text, equals('B1'));
+      expect(manager.nextItem()?.item.text, equals('C1'));
+      expect(manager.nextItem()?.item.text, equals('B2'));
+      expect(manager.nextItem()?.item.text, equals('C1'));
+      expect(manager.nextItem()?.item.text, equals('B1'));
+    });
   });
 }

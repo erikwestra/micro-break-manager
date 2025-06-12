@@ -16,7 +16,6 @@ class MicroBreakList {
 
   factory MicroBreakList.fromTsvLines(String name, List<String> lines) {
     final items = lines
-        .where((line) => line.trim().isNotEmpty)
         .map((line) => MicroBreakItem.fromTsv(line))
         .toList();
     

@@ -28,35 +28,43 @@ class RoundRobinManager {
   RoundRobinSelection? nextItem() {
     if (lists.isEmpty) return null;
     
-    // Check if all lists are empty
-    final hasAnyItems = lists.any((list) => list.items.isNotEmpty);
-    if (!hasAnyItems) return null;
+    // Check if all lists have only empty or blank items
+    final hasAnyNonBlankItems = lists.any((list) => 
+        list.items.any((item) => !item.isBlank));
+    if (!hasAnyNonBlankItems) return null;
     
     // Save current state for potential rollback
     _previousListIndex = _currentListIndex;
     
-    // Find a non-empty list starting from current position
+    // Find a non-blank item starting from current position
     int attempts = 0;
     while (attempts < lists.length) {
       final currentList = lists[_currentListIndex];
       final currentItem = currentList.currentItem;
       
-      
       if (currentItem != null) {
-        // Found a valid item
-        final selection = RoundRobinSelection(
-          list: currentList,
-          item: currentItem,
-        );
-        
-        
-        // Advance the item index in the current list
-        currentList.moveToNext();
-        
-        // Move to the next list for next time
-        _moveToNextList();
-        
-        return selection;
+        if (!currentItem.isBlank) {
+          // Found a valid non-blank item
+          final selection = RoundRobinSelection(
+            list: currentList,
+            item: currentItem,
+          );
+          
+          // Advance the item index in the current list
+          currentList.moveToNext();
+          
+          // Move to the next list for next time
+          _moveToNextList();
+          
+          return selection;
+        } else {
+          // Current item is blank, advance this list's index
+          currentList.moveToNext();
+          // Move to the next list (skip this turn)
+          _moveToNextList();
+          attempts++;
+          continue;
+        }
       }
       
       // This list is empty, try the next one
@@ -64,7 +72,7 @@ class RoundRobinManager {
       attempts++;
     }
     
-    // Should not reach here if hasAnyItems was true
+    // Should not reach here if hasAnyNonBlankItems was true
     return null;
   }
   

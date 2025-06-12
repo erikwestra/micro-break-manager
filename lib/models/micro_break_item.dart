@@ -6,8 +6,10 @@ class MicroBreakItem {
 
   const MicroBreakItem({required this.text});
 
+  bool get isBlank => text.trim().isEmpty;
+
   factory MicroBreakItem.fromTsv(String line) {
-    return MicroBreakItem(text: line.trim());
+    return MicroBreakItem(text: line);
   }
 
   String toTsv() {

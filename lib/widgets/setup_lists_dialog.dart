@@ -71,11 +71,7 @@ class _SetupListsDialogState extends ConsumerState<SetupListsDialog> {
   Future<void> _saveCurrentListIfNeeded() async {
     if (_editingList == null) return;
 
-    final lines = _textController.text
-        .split('\n')
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty)
-        .toList();
+    final lines = _textController.text.split('\n');
 
     final items = lines.map((line) => MicroBreakItem(text: line)).toList();
     final list = MicroBreakList(name: _editingList!, items: items);
@@ -434,7 +430,7 @@ class _SetupListsDialogState extends ConsumerState<SetupListsDialog> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Text(
-                                  'Enter one micro-break item per line:',
+                                  'Enter one micro-break per line; blank lines reduce how often items appear',
                                   style: TextStyle(fontSize: 14, color: Colors.grey),
                                 ),
                                 const SizedBox(height: 8),

@@ -20,7 +20,7 @@ void main() {
       expect(list.items[2].text, equals('Seated Pelvic Tilt'));
     });
 
-    test('fromTsvLines ignores empty lines', () {
+    test('fromTsvLines preserves empty lines', () {
       final lines = [
         'Item 1',
         '',
@@ -30,9 +30,11 @@ void main() {
 
       final list = MicroBreakList.fromTsvLines('test', lines);
 
-      expect(list.items.length, equals(2));
+      expect(list.items.length, equals(4));
       expect(list.items[0].text, equals('Item 1'));
-      expect(list.items[1].text, equals('Item 2'));
+      expect(list.items[1].text, equals(''));
+      expect(list.items[2].text, equals('  '));
+      expect(list.items[3].text, equals('Item 2'));
     });
 
     test('toTsvLines returns lines', () {
@@ -150,6 +152,24 @@ void main() {
       for (var i = 0; i < list.items.length; i++) {
         expect(reconstructedList.items[i].text, equals(list.items[i].text));
       }
+    });
+
+    test('blank lines are recognized as blank', () {
+      final lines = [
+        'Item 1',
+        '',
+        '   ',
+        '\t',
+        'Item 2',
+      ];
+
+      final list = MicroBreakList.fromTsvLines('test', lines);
+
+      expect(list.items[0].isBlank, isFalse);
+      expect(list.items[1].isBlank, isTrue);
+      expect(list.items[2].isBlank, isTrue);
+      expect(list.items[3].isBlank, isTrue);
+      expect(list.items[4].isBlank, isFalse);
     });
   });
 }
