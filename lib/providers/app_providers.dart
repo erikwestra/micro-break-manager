@@ -10,12 +10,10 @@ import '../services/round_robin_manager.dart';
 import '../models/micro_break_list.dart';
 import '../models/micro_break_item.dart';
 import '../models/log_entry.dart';
-import 'settings_provider.dart';
 
 // Storage service provider
 final storageServiceProvider = Provider<FileStorageService>((ref) {
-  final settingsNotifier = ref.watch(settingsProvider.notifier);
-  return FileStorageService(settingsNotifier: settingsNotifier);
+  return FileStorageService();
 });
 
 // Lists provider that loads from storage

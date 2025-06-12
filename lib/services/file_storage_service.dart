@@ -2,12 +2,10 @@
 // ABOUTME: Handles reading/writing TSV files and automatic log purging after 30 days
 
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
 import '../models/micro_break_list.dart';
 import '../models/log_entry.dart';
-import '../providers/settings_provider.dart';
 
 class FileStorageService {
   static const String appDirName = 'MicroBreakManager';
@@ -15,25 +13,22 @@ class FileStorageService {
   static const String listsDirName = 'Lists';
   static const String logsDirName = 'Logs';
   
-  final SettingsNotifier? settingsNotifier;
-  
-  FileStorageService({this.settingsNotifier});
+  FileStorageService();
   
   Future<Directory> getAppDirectory() async {
-    if (settingsNotifier != null) {
-      final dataPath = await settingsNotifier!.getMicroBreakDataDirectory();
-      return Directory(dataPath);
+    // With sandboxing disabled, we can use the real Documents folder
+    final username = Platform.environment['USER'] ?? '';
+    if (username.isEmpty) {
+      throw Exception('Could not determine username');
     }
     
-    // Fallback to default location
-    final directory = await getApplicationSupportDirectory();
-    final appDir = Directory(path.join(directory.path, appDirName));
+    final dataDir = Directory('/Users/$username/Documents/$microBreakDataDirName');
     
-    if (!await appDir.exists()) {
-      await appDir.create(recursive: true);
+    if (!await dataDir.exists()) {
+      await dataDir.create(recursive: true);
     }
     
-    return appDir;
+    return dataDir;
   }
   
   Future<Directory> getListsDirectory() async {
@@ -59,28 +54,33 @@ class FileStorageService {
   }
   
   Future<List<MicroBreakList>> readLists() async {
-    final listsDir = await getListsDirectory();
-    final lists = <MicroBreakList>[];
-    
-    await for (final entity in listsDir.list()) {
-      if (entity is File && entity.path.endsWith('.txt')) {
-        try {
-          final fileName = path.basenameWithoutExtension(entity.path);
-          final lines = await entity.readAsLines();
-          
-          // Create list even if empty
-          lists.add(MicroBreakList.fromTsvLines(fileName, lines));
-        } catch (e) {
-          // Skip malformed files
-          print('Error reading list file ${entity.path}: $e');
+    try {
+      final listsDir = await getListsDirectory();
+      final lists = <MicroBreakList>[];
+      
+      await for (final entity in listsDir.list()) {
+        if (entity is File && entity.path.endsWith('.txt')) {
+          try {
+            final fileName = path.basenameWithoutExtension(entity.path);
+            final lines = await entity.readAsLines();
+            
+            // Create list even if empty
+            lists.add(MicroBreakList.fromTsvLines(fileName, lines));
+          } catch (e) {
+            // Skip malformed files
+            print('Error reading list file ${entity.path}: $e');
+          }
         }
       }
+      
+      // Sort alphabetically by name
+      lists.sort((a, b) => a.name.compareTo(b.name));
+      
+      return lists;
+    } catch (e) {
+      // Directory access error - likely permission issue
+      throw Exception('Cannot access data directory: $e');
     }
-    
-    // Sort alphabetically by name
-    lists.sort((a, b) => a.name.compareTo(b.name));
-    
-    return lists;
   }
   
   Future<void> saveList(MicroBreakList list) async {

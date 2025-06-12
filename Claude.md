@@ -107,3 +107,20 @@ class _MyAppState extends State<MyApp> with WindowListener {
 - Do NOT use any external API references
 - Do NOT guess at API methods or constructors - check the local references first
 - If unsure about an API, ask Erik to verify the correct syntax rather than guessing
+
+## When to Tell Erik to Do a Full Restart
+
+**ALWAYS tell Erik to do a full restart (stop app, `flutter clean`, `flutter run`) when modifying:**
+- **Entitlements files** (`macos/Runner/DebugProfile.entitlements`, `macos/Runner/Release.entitlements`)
+- **Info.plist** files
+- **Native code** (Swift/Objective-C files in `macos/Runner/`)
+- **Pubspec.yaml** dependencies (though `flutter pub get` + hot restart often works)
+- **Build configurations** or signing settings
+- **App icons** or other resources
+
+**Hot reload/restart is fine for:**
+- Dart code changes
+- UI modifications
+- Business logic updates
+
+**When in doubt**, if Erik reports unexpected behavior after native changes, suggest: "This requires a full restart: stop the app, run `flutter clean`, then `flutter run`"

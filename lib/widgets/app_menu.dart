@@ -9,7 +9,6 @@ import '../main.dart';
 import '../providers/app_providers.dart';
 import 'setup_lists_dialog.dart';
 import 'view_logs_dialog.dart';
-import 'settings_dialog.dart';
 
 class AppMenuBar extends ConsumerWidget {
   final Widget child;
@@ -40,15 +39,6 @@ class AppMenuBar extends ConsumerWidget {
     });
   }
 
-  void _showSettingsDialog(BuildContext context) async {
-    await prepareWindowForLargeDialog();
-    showDialog(
-      context: context,
-      builder: (context) => const SettingsDialog(),
-    ).then((_) {
-      restoreWindowSize();
-    });
-  }
 
   void _showLogsDialog(BuildContext context) async {
     await prepareWindowForLargeDialog();
@@ -88,14 +78,6 @@ class AppMenuBar extends ConsumerWidget {
                 PlatformMenuItem(
                   label: 'About Micro-Break Manager',
                   onSelected: () => _showAboutDialog(context),
-                ),
-                PlatformMenuItem(
-                  label: 'Settings...',
-                  shortcut: const SingleActivator(
-                    LogicalKeyboardKey.comma,
-                    meta: true,
-                  ),
-                  onSelected: () => _showSettingsDialog(context),
                 ),
                 PlatformMenuItem(
                   label: 'Setup Micro-Breaks...',
