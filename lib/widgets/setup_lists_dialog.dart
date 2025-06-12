@@ -263,6 +263,7 @@ class _SetupListsDialogState extends ConsumerState<SetupListsDialog> {
         }
       },
       child: Dialog(
+        insetPadding: EdgeInsets.zero,
         child: SizedBox(
         width: 1000,
         height: 700,
@@ -270,7 +271,7 @@ class _SetupListsDialogState extends ConsumerState<SetupListsDialog> {
           children: [
             // Header
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(26, 16, 16, 16),
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(color: Colors.grey[300]!),

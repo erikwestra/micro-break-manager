@@ -105,6 +105,7 @@ class ViewLogsDialog extends ConsumerWidget {
     final selectedEntriesAsync = ref.watch(selectedDateLogEntriesProvider);
 
     return Dialog(
+      insetPadding: EdgeInsets.zero,
       child: SizedBox(
         width: 1000,
         height: 700,
@@ -112,7 +113,7 @@ class ViewLogsDialog extends ConsumerWidget {
           children: [
             // Header
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(26, 16, 16, 16),
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(color: Colors.grey[300]!),
@@ -162,16 +163,6 @@ class ViewLogsDialog extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Padding(
-                            padding: EdgeInsets.all(16),
-                            child: Text(
-                              'Available Logs',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
                           Expanded(
                             child: availableDatesAsync.when(
                               data: (dates) {
@@ -189,6 +180,7 @@ class ViewLogsDialog extends ConsumerWidget {
                                 }
 
                                 return ListView.builder(
+                                  padding: const EdgeInsets.only(top: 8),
                                   itemCount: dates.length,
                                   itemBuilder: (context, index) {
                                     final date = dates[index];
