@@ -39,6 +39,22 @@ class AppMenuBar extends ConsumerWidget {
     });
   }
 
+  void _showSettingsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Settings'),
+        content: const Text('Settings placeholder - content coming soon'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showLogsDialog(BuildContext context) async {
     await prepareWindowForLargeDialog();
     showDialog(
@@ -79,11 +95,15 @@ class AppMenuBar extends ConsumerWidget {
                   onSelected: () => _showAboutDialog(context),
                 ),
                 PlatformMenuItem(
-                  label: 'Setup Micro-Breaks...',
+                  label: 'Settings...',
                   shortcut: const SingleActivator(
                     LogicalKeyboardKey.comma,
                     meta: true,
                   ),
+                  onSelected: () => _showSettingsDialog(context),
+                ),
+                PlatformMenuItem(
+                  label: 'Setup Micro-Breaks...',
                   onSelected: () => _showSetupDialog(context),
                 ),
               ],
@@ -119,7 +139,7 @@ class AppMenuBar extends ConsumerWidget {
           ],
         ),
         PlatformMenu(
-          label: 'Breaks',
+          label: 'Break',
           menus: [
             PlatformMenuItemGroup(
               members: [
