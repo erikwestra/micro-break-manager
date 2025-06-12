@@ -9,7 +9,13 @@ class MicroBreakItem {
   bool get isBlank => text.trim().isEmpty;
 
   factory MicroBreakItem.fromTsv(String line) {
-    return MicroBreakItem(text: line);
+    // Only trim if the line contains non-whitespace characters
+    // Preserve space-only lines as they may be intentional spacing
+    if (line.trim().isEmpty) {
+      return MicroBreakItem(text: line);
+    } else {
+      return MicroBreakItem(text: line.trim());
+    }
   }
 
   String toTsv() {

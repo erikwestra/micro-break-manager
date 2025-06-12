@@ -1,9 +1,12 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:micro_break_manager/providers/app_providers.dart';
 import 'package:micro_break_manager/services/file_storage_service.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  
   group('Basic Provider Tests', () {
     test('storageServiceProvider creates FileStorageService', () {
       final container = ProviderContainer();
