@@ -26,9 +26,7 @@ class AppSettings {
 class SettingsNotifier extends StateNotifier<AppSettings> {
   static const String _dataDirectoryKey = 'custom_data_directory';
   
-  SettingsNotifier() : super(const AppSettings()) {
-    _loadSettings();
-  }
+  SettingsNotifier() : super(const AppSettings());
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
@@ -52,6 +50,9 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   }
 
   Future<String> getDataDirectory() async {
+    // Ensure settings are loaded first
+    await _ensureSettingsLoaded();
+    
     if (state.customDataDirectory != null) {
       return state.customDataDirectory!;
     }
@@ -59,6 +60,15 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     // Default to Application Support directory
     final appSupport = await getApplicationSupportDirectory();
     return appSupport.path;
+  }
+
+  bool _settingsLoaded = false;
+
+  Future<void> _ensureSettingsLoaded() async {
+    if (!_settingsLoaded) {
+      await _loadSettings();
+      _settingsLoaded = true;
+    }
   }
 
   Future<String> getMicroBreakDataDirectory() async {
